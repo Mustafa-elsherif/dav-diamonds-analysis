@@ -26,20 +26,52 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    [data-testid="stAppViewContainer"] { background-color: #f8f9fa; }
-    [data-testid="stSidebar"] { background-color: #1e1e2e; color: white; }
-    [data-testid="stSidebar"] * { color: white !important; }
-    .metric-card {
-        background: white;
-        border-radius: 8px;
-        padding: 16px 20px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        border-left: 4px solid #4f46e5;
+    * { font-family: 'Inter', sans-serif; }
+    [data-testid="stAppViewContainer"] { background-color: #0f0f14; }
+    [data-testid="stSidebar"] { background-color: #16161f; border-right: 1px solid #2a2a3a; }
+    [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
+    [data-testid="stSidebar"] .stRadio label { color: #94a3b8 !important; font-size: 0.9rem; }
+    [data-testid="stSidebar"] .stRadio [aria-checked="true"] + div { color: #a78bfa !important; font-weight: 600; }
+    h1, h2, h3, p, div { color: #e2e8f0; }
+    .stDivider { border-color: #2a2a3a !important; }
+
+    .kpi-card {
+        background: #1a1a27;
+        border: 1px solid #2a2a3a;
+        border-radius: 10px;
+        padding: 18px 20px;
+        border-top: 3px solid #a78bfa;
     }
-    .metric-label { font-size: 0.8rem; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-    .metric-value { font-size: 1.6rem; font-weight: 700; color: #111827; margin-top: 4px; }
-    .section-header { font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
-    .insight-text { font-size: 0.85rem; color: #6b7280; margin-top: 6px; }
+    .kpi-label {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .kpi-value {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-top: 6px;
+    }
+    .chart-caption {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 4px;
+        padding: 0 4px;
+    }
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 2px;
+    }
+    .page-sub {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 12px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -104,207 +136,215 @@ cut_order     = ['Fair', 'Good', 'Very Good', 'Premium', 'Ideal']
 color_order   = ['D', 'E', 'F', 'G', 'H', 'I', 'J']
 clarity_order = ['IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1']
 
-CHART_COLORS = ['#4f46e5', '#7c3aed', '#a855f7', '#ec4899', '#f43f5e']
+DARK_BG    = '#0f0f14'
+CARD_BG    = '#1a1a27'
+BORDER     = '#2a2a3a'
+TEXT       = '#e2e8f0'
+MUTED      = '#64748b'
+ACCENT     = '#a78bfa'
+ACCENT2    = '#818cf8'
+COLORS     = ['#a78bfa', '#818cf8', '#60a5fa', '#34d399', '#f472b6']
 
-def clean_chart(fig):
+def dark_chart(fig):
     fig.update_layout(
-        paper_bgcolor='white',
-        plot_bgcolor='white',
-        font=dict(family='Inter, sans-serif', size=12, color='#374151'),
-        margin=dict(l=10, r=10, t=40, b=10),
-        title_font=dict(size=13, color='#111827', family='Inter, sans-serif'),
+        paper_bgcolor=CARD_BG,
+        plot_bgcolor=CARD_BG,
+        font=dict(family='Inter, sans-serif', size=11, color=TEXT),
+        title_font=dict(size=12, color='#f1f5f9'),
+        margin=dict(l=10, r=10, t=36, b=10),
+        legend=dict(
+            bgcolor='rgba(0,0,0,0)',
+            bordercolor=BORDER,
+            font=dict(color=TEXT)
+        )
     )
-    fig.update_xaxes(showgrid=False, linecolor='#e5e7eb', tickfont=dict(size=11))
-    fig.update_yaxes(gridcolor='#f3f4f6', linecolor='#e5e7eb', tickfont=dict(size=11))
+    fig.update_xaxes(
+        showgrid=False,
+        linecolor=BORDER,
+        tickfont=dict(color=MUTED),
+        title_font=dict(color=MUTED)
+    )
+    fig.update_yaxes(
+        gridcolor='#1f1f2e',
+        linecolor=BORDER,
+        tickfont=dict(color=MUTED),
+        title_font=dict(color=MUTED)
+    )
     return fig
+
+def kpi(label, value):
+    return f"""
+    <div class="kpi-card">
+        <div class="kpi-label">{label}</div>
+        <div class="kpi-value">{value}</div>
+    </div>
+    """
 
 # ============================================================
 # SIDEBAR
 # ============================================================
 
 st.sidebar.markdown("## Diamond Analysis")
-st.sidebar.markdown("CET242 — Data Analytics & Visualization")
-st.sidebar.markdown("Spring 2026")
+st.sidebar.markdown('<p style="color:#64748b;font-size:0.8rem;">CET242 · Spring 2026</p>', unsafe_allow_html=True)
 st.sidebar.divider()
-page = st.sidebar.radio("", [
-    "Overview",
-    "Price Analysis",
-    "Market Segments",
-    "Price Predictor"
-])
+page = st.sidebar.radio("", ["Overview", "Price Analysis", "Market Segments", "Price Predictor"])
 st.sidebar.divider()
-st.sidebar.markdown("**Dataset**")
-st.sidebar.markdown(f"53,772 diamonds · 10 features")
-st.sidebar.markdown("**Team**")
-st.sidebar.markdown("Mustafa Elsherif & Rawda Attia")
+st.sidebar.markdown('<p style="color:#64748b;font-size:0.78rem;">53,772 diamonds · 10 features</p>', unsafe_allow_html=True)
 
 # ============================================================
 # PAGE 1 — OVERVIEW
 # ============================================================
 
 if page == "Overview":
-    st.markdown("## Diamond Market Price Analysis")
-    st.markdown('<p style="color:#6b7280;font-size:0.9rem;">Diamonds Dataset — 53,772 records · 10 features · Spring 2026</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-title">Diamond Market Price Analysis</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-sub">Diamonds Dataset · 53,772 records · 10 features</p>', unsafe_allow_html=True)
     st.divider()
 
     col1, col2, col3, col4, col5 = st.columns(5)
-    metrics = [
-        ("Total Diamonds", f"{len(df):,}"),
-        ("Average Price", f"${df['price'].mean():,.0f}"),
-        ("Price per Carat", f"${df['price'].sum()/df['carat'].sum():,.0f}"),
-        ("Min Price", f"${df['price'].min():,}"),
-        ("Max Price", f"${df['price'].max():,}"),
-    ]
-    for col, (label, value) in zip([col1, col2, col3, col4, col5], metrics):
-        col.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    for col, label, value in zip(
+        [col1, col2, col3, col4, col5],
+        ["Total Diamonds", "Average Price", "Price per Carat", "Min Price", "Max Price"],
+        [f"{len(df):,}", f"${df['price'].mean():,.0f}", f"${df['price'].sum()/df['carat'].sum():,.0f}",
+         f"${df['price'].min():,}", f"${df['price'].max():,}"]
+    ):
+        col.markdown(kpi(label, value), unsafe_allow_html=True)
 
     st.write("")
 
     col1, col2 = st.columns(2)
     with col1:
         fig = px.histogram(df, x='price', nbins=50, title='Price Distribution')
-        fig.update_traces(marker_color='#4f46e5', marker_line_width=0)
+        fig.update_traces(marker_color=ACCENT, marker_line_width=0)
         fig.update_layout(xaxis_title='Price ($)', yaxis_title='Count')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">Most diamonds are priced under $2,500. Distribution is right-skewed — few very expensive diamonds pull the average up.</p>', unsafe_allow_html=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">Most diamonds priced under $2,500. Right-skewed — few very expensive diamonds pull the average up.</p>', unsafe_allow_html=True)
 
     with col2:
         fig = px.scatter(df.sample(5000, random_state=42), x='carat', y='price',
                          title='Price vs Carat Weight')
-        fig.update_traces(marker=dict(color='#4f46e5', size=3, opacity=0.3))
+        fig.update_traces(marker=dict(color=ACCENT, size=3, opacity=0.4))
         fig.update_layout(xaxis_title='Carat', yaxis_title='Price ($)')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">Strong positive relationship (correlation = 0.92). Price grows exponentially with carat — not linearly.</p>', unsafe_allow_html=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">Strong positive relationship (correlation = 0.92). Price grows exponentially with carat.</p>', unsafe_allow_html=True)
 
     st.divider()
-    st.markdown('<p class="section-header">Category Distribution</p>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
         cut_counts = df['cut'].value_counts().loc[cut_order].reset_index()
         fig = px.bar(cut_counts, x='cut', y='count', title='Count by Cut')
-        fig.update_traces(marker_color='#4f46e5')
+        fig.update_traces(marker_color=ACCENT)
         fig.update_layout(xaxis_title='', yaxis_title='Count')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
     with col2:
         color_counts = df['color'].value_counts().loc[color_order].reset_index()
         fig = px.bar(color_counts, x='color', y='count', title='Count by Color')
-        fig.update_traces(marker_color='#7c3aed')
+        fig.update_traces(marker_color=ACCENT2)
         fig.update_layout(xaxis_title='', yaxis_title='Count')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
     with col3:
         clarity_counts = df['clarity'].value_counts().loc[clarity_order].reset_index()
         fig = px.bar(clarity_counts, x='clarity', y='count', title='Count by Clarity')
-        fig.update_traces(marker_color='#a855f7')
+        fig.update_traces(marker_color='#60a5fa')
         fig.update_layout(xaxis_title='', yaxis_title='Count')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
 # ============================================================
 # PAGE 2 — PRICE ANALYSIS
 # ============================================================
 
 elif page == "Price Analysis":
-    st.markdown("## Price Analysis")
-    st.markdown('<p style="color:#6b7280;font-size:0.9rem;">How each feature affects diamond price</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-title">Price Analysis</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-sub">How each feature affects diamond price</p>', unsafe_allow_html=True)
     st.divider()
 
-    # Correlation
-    st.markdown('<p class="section-header">Feature Correlation with Price</p>', unsafe_allow_html=True)
     numeric_cols = df[['carat', 'depth', 'table', 'price', 'x', 'y', 'z']].corr()
     price_corr = numeric_cols['price'].drop('price').sort_values(ascending=True)
     fig = px.bar(x=price_corr.values, y=price_corr.index,
-                 orientation='h', title='Correlation with Price')
-    fig.update_traces(marker_color=['#ef4444' if v < 0 else '#4f46e5' for v in price_corr.values])
+                 orientation='h', title='Feature Correlation with Price')
+    fig.update_traces(marker_color=[ACCENT if v > 0 else '#f472b6' for v in price_corr.values])
     fig.update_layout(xaxis_title='Correlation Coefficient', yaxis_title='')
-    st.plotly_chart(clean_chart(fig), use_container_width=True)
-    st.markdown('<p class="insight-text">Carat has the highest correlation (0.92). Physical dimensions (x, y, z) also correlate strongly because they are directly related to carat. Depth and table have negligible effect on price.</p>', unsafe_allow_html=True)
+    st.plotly_chart(dark_chart(fig), use_container_width=True)
+    st.markdown('<p class="chart-caption">Carat (0.92) is the dominant price driver. Physical dimensions x, y, z are also strong because they correlate directly with carat. Depth and table have negligible effect.</p>', unsafe_allow_html=True)
 
     st.divider()
-
-    # Price by quality
-    st.markdown('<p class="section-header">Average Price vs Average Carat by Quality Grade</p>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
         avg = df.groupby('cut').agg(avg_price=('price','mean'), avg_carat=('carat','mean')).loc[cut_order].reset_index()
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=avg['cut'], y=avg['avg_price'], name='Avg Price ($)', marker_color='#4f46e5'))
-        fig.add_trace(go.Scatter(x=avg['cut'], y=avg['avg_carat']*5000, name='Avg Carat (scaled)', mode='lines+markers', line=dict(color='#f43f5e', width=2), marker=dict(size=7)))
-        fig.update_layout(title='Cut — Avg Price vs Avg Carat', xaxis_title='Cut Quality',
-                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.2))
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">Ideal cut has lower avg price because it comes in smaller sizes (0.703 ct). Carat size confounds the quality premium.</p>', unsafe_allow_html=True)
+        fig.add_trace(go.Bar(x=avg['cut'], y=avg['avg_price'], name='Avg Price ($)', marker_color=ACCENT))
+        fig.add_trace(go.Scatter(x=avg['cut'], y=avg['avg_carat']*5000, name='Avg Carat ×5000',
+                                 mode='lines+markers', line=dict(color='#f472b6', width=2), marker=dict(size=7)))
+        fig.update_layout(title='Cut — Avg Price vs Avg Carat', xaxis_title='Cut',
+                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.25))
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">Ideal cut has lower avg price ($3,462) than Premium ($4,578) because Ideal diamonds are smaller (0.703 ct vs 1.044 ct for Fair). Carat confounds the quality premium.</p>', unsafe_allow_html=True)
 
     with col2:
         avg = df.groupby('color').agg(avg_price=('price','mean'), avg_carat=('carat','mean')).loc[color_order].reset_index()
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=avg['color'], y=avg['avg_price'], name='Avg Price ($)', marker_color='#7c3aed'))
-        fig.add_trace(go.Scatter(x=avg['color'], y=avg['avg_carat']*5000, name='Avg Carat (scaled)', mode='lines+markers', line=dict(color='#f43f5e', width=2), marker=dict(size=7)))
-        fig.update_layout(title='Color — Avg Price vs Avg Carat', xaxis_title='Color Grade (D=best)',
-                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.2))
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">D color (best) has lower avg price than J (worst). J color diamonds are 77% larger on average — carat drives the price difference.</p>', unsafe_allow_html=True)
+        fig.add_trace(go.Bar(x=avg['color'], y=avg['avg_price'], name='Avg Price ($)', marker_color=ACCENT2))
+        fig.add_trace(go.Scatter(x=avg['color'], y=avg['avg_carat']*5000, name='Avg Carat ×5000',
+                                 mode='lines+markers', line=dict(color='#f472b6', width=2), marker=dict(size=7)))
+        fig.update_layout(title='Color — Avg Price vs Avg Carat', xaxis_title='Color (D=best)',
+                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.25))
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">D color (best) avg price = $3,172 vs J (worst) = $5,326. J color diamonds are 77% larger — carat drives the difference, not color quality.</p>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
         avg = df.groupby('clarity').agg(avg_price=('price','mean'), avg_carat=('carat','mean')).loc[clarity_order].reset_index()
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=avg['clarity'], y=avg['avg_price'], name='Avg Price ($)', marker_color='#a855f7'))
-        fig.add_trace(go.Scatter(x=avg['clarity'], y=avg['avg_carat']*5000, name='Avg Carat (scaled)', mode='lines+markers', line=dict(color='#f43f5e', width=2), marker=dict(size=7)))
-        fig.update_layout(title='Clarity — Avg Price vs Avg Carat', xaxis_title='Clarity Grade (IF=best)',
-                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.2))
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">IF clarity (best) has the lowest avg price. I1 diamonds are 154% larger on average. VS1-VS2 offers the best clarity-to-price balance.</p>', unsafe_allow_html=True)
+        fig.add_trace(go.Bar(x=avg['clarity'], y=avg['avg_price'], name='Avg Price ($)', marker_color='#60a5fa'))
+        fig.add_trace(go.Scatter(x=avg['clarity'], y=avg['avg_carat']*5000, name='Avg Carat ×5000',
+                                 mode='lines+markers', line=dict(color='#f472b6', width=2), marker=dict(size=7)))
+        fig.update_layout(title='Clarity — Avg Price vs Avg Carat', xaxis_title='Clarity (IF=best)',
+                         yaxis_title='Avg Price ($)', legend=dict(orientation='h', y=-0.25))
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">IF clarity (best) has the lowest avg price ($2,870). I1 diamonds are 154% larger on average. VS1-VS2 offers the best quality-to-price balance.</p>', unsafe_allow_html=True)
 
     with col2:
         root_data = pd.DataFrame({
             'Grade': ['Cut', 'Color', 'Clarity'],
-            'Best Grade Avg Carat': [0.703, 0.658, 0.506],
-            'Worst Grade Avg Carat': [1.044, 1.163, 1.284],
+            'Best Grade': [0.703, 0.658, 0.506],
+            'Worst Grade': [1.044, 1.163, 1.284],
         })
         fig = go.Figure()
         fig.add_trace(go.Bar(name='Best Grade', x=root_data['Grade'],
-                             y=root_data['Best Grade Avg Carat'], marker_color='#4f46e5'))
+                             y=root_data['Best Grade'], marker_color=ACCENT))
         fig.add_trace(go.Bar(name='Worst Grade', x=root_data['Grade'],
-                             y=root_data['Worst Grade Avg Carat'], marker_color='#f43f5e'))
-        fig.update_layout(title='Root Cause — Carat Size by Quality Extreme',
-                         barmode='group', xaxis_title='Quality Dimension',
-                         yaxis_title='Average Carat')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-        st.markdown('<p class="insight-text">Worst quality grades are consistently larger in carat. This is the root cause of the counterintuitive pricing pattern.</p>', unsafe_allow_html=True)
+                             y=root_data['Worst Grade'], marker_color='#f472b6'))
+        fig.update_layout(title='Root Cause — Avg Carat by Quality Extreme',
+                         barmode='group', xaxis_title='', yaxis_title='Average Carat')
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
+        st.markdown('<p class="chart-caption">Worst quality grades are consistently larger in carat. This is the root cause of the counterintuitive pricing pattern across all quality dimensions.</p>', unsafe_allow_html=True)
 
 # ============================================================
 # PAGE 3 — MARKET SEGMENTS
 # ============================================================
 
 elif page == "Market Segments":
-    st.markdown("## Market Segments")
-    st.markdown('<p style="color:#6b7280;font-size:0.9rem;">K-Means Clustering — 4 natural market segments based on carat and price</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-title">Market Segments</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-sub">K-Means Clustering · 4 natural segments based on carat and price</p>', unsafe_allow_html=True)
     st.divider()
 
     fig = px.scatter(df.sample(10000, random_state=42),
                      x='carat', y='price', color='cluster_label',
-                     title='Diamond Market Segments',
+                     title='Diamond Market Segments — K-Means (k=4)',
                      category_orders={'cluster_label': ['Budget', 'Mid-Range', 'Upper Mid-Range', 'Luxury']},
-                     color_discrete_sequence=['#4f46e5', '#7c3aed', '#a855f7', '#ec4899'],
-                     opacity=0.5)
+                     color_discrete_sequence=COLORS, opacity=0.5)
     fig.update_traces(marker=dict(size=4))
-    fig.update_layout(xaxis_title='Carat Weight', yaxis_title='Price ($)',
-                     legend_title='Segment')
-    st.plotly_chart(clean_chart(fig), use_container_width=True)
+    fig.update_layout(xaxis_title='Carat', yaxis_title='Price ($)', legend_title='Segment')
+    st.plotly_chart(dark_chart(fig), use_container_width=True)
+    st.markdown('<p class="chart-caption">Segments are naturally separated along the carat axis — confirming carat as the dominant factor that divides the diamond market into price tiers.</p>', unsafe_allow_html=True)
 
     st.divider()
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<p class="section-header">Segment Summary</p>', unsafe_allow_html=True)
         summary = df.groupby('cluster_label').agg(
             Count=('price', 'count'),
             Avg_Carat=('carat', 'mean'),
@@ -320,12 +360,11 @@ elif page == "Market Segments":
         seg_counts = df['cluster_label'].value_counts().reset_index()
         seg_counts.columns = ['Segment', 'Count']
         fig = px.pie(seg_counts, values='Count', names='Segment',
-                     title='Segment Distribution',
-                     color_discrete_sequence=['#4f46e5', '#7c3aed', '#a855f7', '#ec4899'])
-        fig.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
-
-    st.divider()
+                     title='Segment Size Distribution',
+                     color_discrete_sequence=COLORS)
+        fig.update_traces(textposition='inside', textinfo='percent+label',
+                         textfont=dict(color='white'))
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -337,7 +376,7 @@ elif page == "Market Segments":
                          'cut': cut_order
                      })
         fig.update_layout(xaxis_title='Segment', yaxis_title='Count', legend_title='Cut')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
     with col2:
         clarity_seg = df.groupby(['cluster_label', 'clarity']).size().reset_index(name='count')
@@ -348,19 +387,18 @@ elif page == "Market Segments":
                          'clarity': clarity_order
                      })
         fig.update_layout(xaxis_title='Segment', yaxis_title='Count', legend_title='Clarity')
-        st.plotly_chart(clean_chart(fig), use_container_width=True)
+        st.plotly_chart(dark_chart(fig), use_container_width=True)
 
 # ============================================================
 # PAGE 4 — PRICE PREDICTOR
 # ============================================================
 
 elif page == "Price Predictor":
-    st.markdown("## Price Predictor")
-    st.markdown(f'<p style="color:#6b7280;font-size:0.9rem;">Polynomial Regression + Ridge · R² = {r2:.4f} · Explains {r2*100:.2f}% of price variance</p>', unsafe_allow_html=True)
+    st.markdown('<p class="page-title">Price Predictor</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="page-sub">Polynomial Regression + Ridge · R² = {r2:.4f} · {r2*100:.2f}% of price variance explained</p>', unsafe_allow_html=True)
     st.divider()
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown("**Physical Features**")
         carat = st.slider("Carat", 0.2, 5.0, 1.0, 0.01)
@@ -397,27 +435,9 @@ elif page == "Price Predictor":
 
     st.divider()
     col1, col2, col3, col4 = st.columns(4)
-    col1.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Predicted Price</div>
-        <div class="metric-value">${pred_price:,.0f}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    col2.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Market Segment</div>
-        <div class="metric-value" style="font-size:1.2rem;">{segment}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    col3.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Model R²</div>
-        <div class="metric-value">{r2:.4f}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    col4.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">Carat Weight</div>
-        <div class="metric-value">{carat} ct</div>
-    </div>
-    """, unsafe_allow_html=True)
+    for col, label, value in zip(
+        [col1, col2, col3, col4],
+        ["Predicted Price", "Market Segment", "Model R²", "Carat Weight"],
+        [f"${pred_price:,.0f}", segment, f"{r2:.4f}", f"{carat} ct"]
+    ):
+        col.markdown(kpi(label, value), unsafe_allow_html=True)
